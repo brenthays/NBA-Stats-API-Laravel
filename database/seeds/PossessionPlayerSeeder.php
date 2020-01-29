@@ -8,6 +8,20 @@ use Carbon\Carbon;
 class PossessionPlayerSeeder extends Seeder
 {
     /**
+     * Array indexed by player name containing the player id
+     *
+     * @var array
+     */
+    protected $playersCache = [];
+
+    /**
+     * Array indexed by team short name containing the team id
+     *
+     * @var array
+     */
+    protected $teamsCache = [];
+
+    /**
      * Run the database seeds.
      *
      * @return void
@@ -18,8 +32,14 @@ class PossessionPlayerSeeder extends Seeder
 
         foreach($files as $file) {
             $teams = explode("@", substr(substr($file, -11), 0, 7));
-            $visitorTeam = DB::table('teams')->where('short_name', $teams[0])->first();
-            $homeTeam = DB::table('teams')->where('short_name', $teams[1])->first();
+            if(!in_array('HOU', $teams)) continue;
+
+            $awayTeamId = $this->getTeamId($teams[0]);
+            $homeTeamId = $this->getTeamId($teams[1]);
+
+            // $visitorTeam = DB::table('teams')->where('short_name', $teams[0])->first();
+            // $homeTeam = DB::table('teams')->where('short_name', $teams[1])->first();
+            // if($homeTeam->short_name != 'HOU' && $visitorTeam->short_name != 'HOU') continue;
 
             $csv = Reader::createFromPath($file)->setHeaderOffset(0);
             $i = 0;
@@ -38,18 +58,19 @@ class PossessionPlayerSeeder extends Seeder
                     // Game
                     $gameId = DB::table('games')->insertGetId([
                         'game_date' => Carbon::parse($record['date'])->format('Y-m-d'),
-                        'home_team_id' => $homeTeam->id,
-                        'away_team_id' => $visitorTeam->id,
+                        'home_team_id' => $homeTeamId,
+                        'away_team_id' => $awayTeamId,
                         'season_id' => $seasonId,
                         'created_at' => Carbon::now()->format('Y-m-d H:i:s'),
                         'updated_at' => Carbon::now()->format('Y-m-d H:i:s')
                     ]);
                 }
 
-                $team = !empty($record['team']) ? DB::table('teams')->where('short_name', $record['team'])->first() : null;
+                // $team = !empty($record['team']) ? DB::table('teams')->where('short_name', $record['team'])->first() : null;
+                $teamId = !empty($record['team']) ? $this->getTeamId($record['team']) : null;
                 $possessionArgs = [
                     'game_id' => $gameId,
-                    'team_id' => $team ? $team->id : null,
+                    'team_id' => $teamId,
                     'period' => $record['period'],
                     'home_team_score' => $record['home_score'],
                     'away_team_score' => $record['away_score'],
@@ -84,18 +105,13 @@ class PossessionPlayerSeeder extends Seeder
                 ];
                 foreach($playerFields as $key => $value) {
                     if(!empty($record[$key])) {
-                        $thisPlayerName = utf8_encode($record[$key]);
-                        $thisPlayer = DB::table('players')->where('name', $thisPlayerName)->first();
-                        $possessionArgs[$value] = $thisPlayer ? $thisPlayer->id : DB::table('players')->insertGetId([
-                            'name' => $thisPlayerName,
-                            'created_at' => Carbon::now()->format('Y-m-d H:i:s'),
-                            'updated_at' => Carbon::now()->format('Y-m-d H:i:s')
-                        ]);
+                        $thisPlayerId = $this->getPlayerId(utf8_encode($record[$key]));
+                        $possessionArgs[$value] = $thisPlayerId ? $thisPlayerId : null;
 
                         // Update the latest team for the player
-                        if($team && $possessionArgs[$value]) {
+                        if($teamId && $possessionArgs[$value]) {
                             DB::update('update players set team_id=? where id=?', [
-                                $team->id,
+                                $teamId,
                                 $possessionArgs[$value]
                             ]);
                         }
@@ -106,38 +122,83 @@ class PossessionPlayerSeeder extends Seeder
 
                 // Visiting team players on court
                 for($i=1; $i<=5; $i++) {
-                    $thisPlayerName = utf8_encode($record['a'.$i]);
-                    $thisPlayer = DB::table('players')->where('name', $thisPlayerName)->first();
+                    $thisPlayerId = $this->getPlayerId(utf8_encode($record['a'.$i]));
                     $ppArgs = [
                         'possession_id' => $possessionId,
-                        'team_id' => $visitorTeam->id,
+                        'team_id' => $awayTeamId,
+                        'player_id' => $thisPlayerId,
                     ];
-                    $ppArgs['player_id'] = $thisPlayer ? $thisPlayer->id : DB::table('players')->insertGetId([
-                        'name' => $thisPlayerName,
-                        'created_at' => Carbon::now()->format('Y-m-d H:i:s'),
-                        'updated_at' => Carbon::now()->format('Y-m-d H:i:s')
-                    ]);
                     DB::table('player_possession')->insert($ppArgs);
                 }
 
                 // Visiting team players on court
                 for($i=1; $i<=5; $i++) {
-                    $thisPlayerName = utf8_encode($record['h'.$i]);
-                    $thisPlayer = DB::table('players')->where('name', $thisPlayerName)->first();
+                    $thisPlayerId = $this->getPlayerId(utf8_encode($record['h'.$i]));
                     $ppArgs = [
                         'possession_id' => $possessionId,
-                        'team_id' => $homeTeam->id,
+                        'team_id' => $homeTeamId,
+                        'player_id' => $thisPlayerId,
                     ];
-                    $ppArgs['player_id'] = $thisPlayer ? $thisPlayer->id : DB::table('players')->insertGetId([
-                        'name' => $thisPlayerName,
-                        'created_at' => Carbon::now()->format('Y-m-d H:i:s'),
-                        'updated_at' => Carbon::now()->format('Y-m-d H:i:s')
-                    ]);
                     DB::table('player_possession')->insert($ppArgs);
                 }
 
                 $i++;
             }
         }
+    }
+
+    /**
+     * Retrieves a player id
+     *
+     * @param string $name
+     * @return int
+     */
+    private function getPlayerId($name)
+    {
+        // Check the cache first
+        $thisPlayerId = isset($this->playersCache[$name]) ? $this->playersCache[$name] : false;
+
+        // Check the databaase
+        if(!$thisPlayerId) {
+            $thisPlayer = DB::table('players')->where('name', $name)->first();
+            $thisPlayerId = $thisPlayer ? $thisPlayer->id : false;
+        }
+
+        // Insert into database
+        if(!$thisPlayerId) {
+            $thisPlayerId = DB::table('players')->insertGetId([
+                'name' => $name,
+                'created_at' => Carbon::now()->format('Y-m-d H:i:s'),
+                'updated_at' => Carbon::now()->format('Y-m-d H:i:s')
+            ]);
+        }
+
+        // Update the cache
+        $this->playersCache[$name] = $thisPlayerId;
+
+        return $thisPlayerId;
+    }
+
+    /**
+     * Retrieves a team id
+     *
+     * @param string $name
+     * @return int
+     */
+    private function getTeamId($name)
+    {
+        // Check the cache first
+        $thisTeamId = isset($this->teamsCache[$name]) ? $this->teamsCache[$name] : null;
+
+        // Check the databaase
+        if(!$thisTeamId) {
+            $thisTeam = DB::table('teams')->where('short_name', $name)->first();
+            $thisTeamId = $thisTeam ? $thisTeam->id : null;
+        }
+
+        // Update the cache
+        $this->teamsCache[$name] = $thisTeamId;
+
+        return $thisTeamId;
     }
 }
