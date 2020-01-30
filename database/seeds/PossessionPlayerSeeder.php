@@ -15,7 +15,7 @@ class PossessionPlayerSeeder extends Seeder
     protected $playersCache = [];
 
     /**
-     * Array indexed by team short name containing the team id
+     * Array indexed by team short_name containing the team id
      *
      * @var array
      */
