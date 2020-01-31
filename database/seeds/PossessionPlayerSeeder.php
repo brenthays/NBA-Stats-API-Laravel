@@ -32,14 +32,15 @@ class PossessionPlayerSeeder extends Seeder
 
         foreach($files as $file) {
             $teams = explode("@", substr(substr($file, -11), 0, 7));
+
+            // Go Rockets!
             if(!in_array('HOU', $teams)) continue;
 
             $awayTeamId = $this->getTeamId($teams[0]);
             $homeTeamId = $this->getTeamId($teams[1]);
-
-            // $visitorTeam = DB::table('teams')->where('short_name', $teams[0])->first();
-            // $homeTeam = DB::table('teams')->where('short_name', $teams[1])->first();
-            // if($homeTeam->short_name != 'HOU' && $visitorTeam->short_name != 'HOU') continue;
+            $teamId = null;
+            $possessionNum = 0;
+            $last2Teams = [];
 
             $csv = Reader::createFromPath($file)->setHeaderOffset(0);
             $i = 0;
@@ -66,9 +67,17 @@ class PossessionPlayerSeeder extends Seeder
                     ]);
                 }
 
-                // $team = !empty($record['team']) ? DB::table('teams')->where('short_name', $record['team'])->first() : null;
                 $teamId = !empty($record['team']) ? $this->getTeamId($record['team']) : null;
+
+                // Keep last two valid team ids to track change of possession
+                if($teamId) {
+                    $last2Teams[] = $teamId;
+                    if(count($last2Teams) > 2) array_shift($last2Teams);
+                    if(count($last2Teams) > 1 && $last2Teams[0] != $last2Teams[1]) $possessionNum++;
+                }
+
                 $possessionArgs = [
+                    'possession_num' => $possessionNum,
                     'game_id' => $gameId,
                     'team_id' => $teamId,
                     'period' => $record['period'],

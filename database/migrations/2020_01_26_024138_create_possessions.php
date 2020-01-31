@@ -15,6 +15,7 @@ class CreatePossessions extends Migration
     {
         Schema::create('possessions', function (Blueprint $table) {
             $table->increments('id');
+            $table->integer('possession_num')->default(0);
             $table->unsignedInteger('game_id');
             $table->integer('period');
             $table->integer('home_team_score')->default(0);
