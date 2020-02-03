@@ -33,7 +33,10 @@ class PlayerController extends Controller
         if($request->has('with_stats') && $request->with_stats && ($request->has('season_id') || $request->has('game_id'))) {
             $players = $players
                 ->statsBase($request->only(['game_id', 'season_id']))
-                ->statsScoring();
+                ->statsMinutes()
+                ->statsScoring()
+                ->statsAssists()
+                ->statsRebounding();
         }
 
         return $players->get();

@@ -146,6 +146,53 @@ class Player extends BaseModel
     }
 
     /**
+     * Scopes a query to aggregate data for playing time
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder $query
+     * @param  mixed $args
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeStatsMinutes($query)
+    {
+        return $query
+        // Total play time
+        ->addSelect(DB::raw('SUM(TIME_TO_SEC(p.play_length)) as total_play_time_seconds'))
+        // Play time by quarter
+        ->leftJoin('possessions as p_q1', function($join) {
+            $join->on('p_q1.id', '=', 'p.id');
+            $join->where('p_q1.period', '=', 1);
+            $join->whereNull('p_q1.deleted_at');
+        })
+        ->addSelect(DB::raw('SUM(TIME_TO_SEC(p_q1.play_length)) as total_play_time_seconds_q1'))
+        ->leftJoin('possessions as p_q2', function($join) {
+            $join->on('p_q2.id', '=', 'p.id');
+            $join->where('p_q2.period', '=', 2);
+            $join->whereNull('p_q2.deleted_at');
+        })
+        ->addSelect(DB::raw('SUM(TIME_TO_SEC(p_q2.play_length)) as total_play_time_seconds_q2'))
+        ->leftJoin('possessions as p_q3', function($join) {
+            $join->on('p_q3.id', '=', 'p.id');
+            $join->where('p_q3.period', '=', 3);
+            $join->whereNull('p_q3.deleted_at');
+        })
+        ->addSelect(DB::raw('SUM(TIME_TO_SEC(p_q3.play_length)) as total_play_time_seconds_q3'))
+        ->leftJoin('possessions as p_q4', function($join) {
+            $join->on('p_q4.id', '=', 'p.id');
+            $join->where('p_q4.period', '=', 4);
+            $join->whereNull('p_q4.deleted_at');
+        })
+        ->addSelect(DB::raw('SUM(TIME_TO_SEC(p_q4.play_length)) as total_play_time_seconds_q4'))
+        // Play time in overtimes
+        ->leftJoin('possessions as p_ot', function($join) {
+            $join->on('p_ot.id', '=', 'p.id');
+            $join->where('p_ot.period', '>', 4);
+            $join->whereNull('p_ot.deleted_at');
+        })
+        ->addSelect(DB::raw('SUM(TIME_TO_SEC(p_ot.play_length)) as total_play_time_seconds_ot'));
+    }
+
+
+    /**
      * Scopes a query to aggregate data for scoring stats
      *
      * @param  \Illuminate\Database\Eloquent\Builder $query
@@ -186,6 +233,95 @@ class Player extends BaseModel
             $join->on('p_points_ot.id', '=', 'p_points.id');
             $join->where('p_points_ot.period', '>', 4);
         })->addSelect(DB::raw('SUM(p_points_ot.points) as total_player_points_ot'));
+
+        return $query;
+    }
+
+    /**
+     * Scopes a query to aggregate data for rebounding stats
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder $query
+     * @param  mixed $args
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeStatsRebounding($query)
+    {
+        // Events where the player rebounded
+        $query = $query->leftJoin('possessions as p_reb', function($join) {
+            $join->on('p_reb.id', '=', 'p.id');
+            $join->on('p_reb.player_id', '=', 'players.id');
+            $join->where('p_reb.event_type', '=', 'rebound');
+            $join->whereNull('p_reb.deleted_at');
+        })->addSelect(DB::raw('COUNT(DISTINCT p_reb.id) as total_player_rebounds'));
+
+        // Rebounds by quarter
+        $query = $query
+        ->leftJoin('possessions as p_reb_q1', function($join) {
+            $join->on('p_reb_q1.id', '=', 'p_reb.id');
+            $join->where('p_reb_q1.period', '=', 1);
+        })->addSelect(DB::raw('COUNT(DISTINCT p_reb_q1.id) as total_player_rebounds_q1'))
+        ->leftJoin('possessions as p_reb_q2', function($join) {
+            $join->on('p_reb_q2.id', '=', 'p_reb.id');
+            $join->where('p_reb_q2.period', '=', 2);
+        })->addSelect(DB::raw('COUNT(DISTINCT p_points_q2.id) as total_player_rebounds_q2'))
+        ->leftJoin('possessions as p_reb_q3', function($join) {
+            $join->on('p_reb_q3.id', '=', 'p_reb.id');
+            $join->where('p_reb_q3.period', '=', 3);
+        })->addSelect(DB::raw('COUNT(DISTINCT p_reb_q3.id) as total_player_rebounds_q3'))
+        ->leftJoin('possessions as p_reb_q4', function($join) {
+            $join->on('p_reb_q4.id', '=', 'p_reb.id');
+            $join->where('p_reb_q4.period', '=', 4);
+        })->addSelect(DB::raw('COUNT(DISTINCT p_reb_q4.id) as total_player_rebounds_q4'));
+
+        // Rebounds in overtime
+        $query = $query->leftJoin('possessions as p_reb_ot', function($join) {
+            $join->on('p_reb_ot.id', '=', 'p_reb.id');
+            $join->where('p_reb_ot.period', '>', 4);
+        })->addSelect(DB::raw('COUNT(DISTINCT p_reb_ot.id) as total_player_rebounds_ot'));
+
+        return $query;
+    }
+
+    /**
+     * Scopes a query to aggregate data for assist stats
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder $query
+     * @param  mixed $args
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeStatsAssists($query)
+    {
+        // Events where the player assisted
+        $query = $query->leftJoin('possessions as p_ast', function($join) {
+            $join->on('p_ast.id', '=', 'p.id');
+            $join->on('p_ast.assist_player_id', '=', 'players.id');
+            $join->whereNull('p_ast.deleted_at');
+        })->addSelect(DB::raw('COUNT(DISTINCT p_ast.id) as total_player_assists'));
+
+        // Assists by quarter
+        $query = $query
+        ->leftJoin('possessions as p_ast_q1', function($join) {
+            $join->on('p_ast_q1.id', '=', 'p_ast.id');
+            $join->where('p_ast_q1.period', '=', 1);
+        })->addSelect(DB::raw('COUNT(DISTINCT p_ast_q1.id) as total_player_assists_q1'))
+        ->leftJoin('possessions as p_ast_q2', function($join) {
+            $join->on('p_ast_q2.id', '=', 'p_ast.id');
+            $join->where('p_ast_q2.period', '=', 2);
+        })->addSelect(DB::raw('COUNT(DISTINCT p_ast_q2.id) as total_player_assists_q2'))
+        ->leftJoin('possessions as p_ast_q3', function($join) {
+            $join->on('p_ast_q3.id', '=', 'p_ast.id');
+            $join->where('p_ast_q3.period', '=', 3);
+        })->addSelect(DB::raw('COUNT(DISTINCT p_ast_q3.id) as total_player_assists_q3'))
+        ->leftJoin('possessions as p_ast_q4', function($join) {
+            $join->on('p_ast_q4.id', '=', 'p_ast.id');
+            $join->where('p_ast_q4.period', '=', 4);
+        })->addSelect(DB::raw('COUNT(DISTINCT p_ast_q4.id) as total_player_assists_q4'));
+
+        // Assists in overtime
+        $query = $query->leftJoin('possessions as p_ast_ot', function($join) {
+            $join->on('p_ast_ot.id', '=', 'p_ast.id');
+            $join->where('p_ast_ot.period', '>', 4);
+        })->addSelect(DB::raw('COUNT(DISTINCT p_ast_ot.id) as total_player_assists_ot'));
 
         return $query;
     }
