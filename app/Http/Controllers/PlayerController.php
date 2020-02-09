@@ -36,7 +36,8 @@ class PlayerController extends Controller
                 ->statsMinutes()
                 ->statsScoring()
                 ->statsAssists()
-                ->statsRebounding();
+                ->statsRebounding()
+                ->statsOffensiveVsDefensive();
         }
 
         return $players->get();

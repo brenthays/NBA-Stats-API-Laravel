@@ -191,6 +191,93 @@ class Player extends BaseModel
         ->addSelect(DB::raw('SUM(TIME_TO_SEC(p_ot.play_length)) as total_play_time_seconds_ot'));
     }
 
+    /**
+     * Scopes a query to aggregate data for offensive vs defensive possessions
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder $query
+     * @param  mixed $args
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeStatsOffensiveVsDefensive($query)
+    {
+        return $query
+        // Offensive possessions by quarter
+        ->leftJoin('possessions as p_offense_q1', function($join) {
+            $join->on('p_offense_q1.id', '=', 'p.id');
+            $join->on('p_offense_q1.team_id', '=', 'players.team_id');
+            $join->where('p_offense_q1.period', '=', 1);
+            $join->whereNull('p_offense_q1.deleted_at');
+        })
+        ->addSelect(DB::raw('SUM(p_offense_q1.points) as total_team_points_q1'))
+        ->leftJoin('possessions as p_offense_q2', function($join) {
+            $join->on('p_offense_q2.id', '=', 'p.id');
+            $join->on('p_offense_q2.team_id', '=', 'players.team_id');
+            $join->where('p_offense_q2.period', '=', 2);
+            $join->whereNull('p_offense_q2.deleted_at');
+        })
+        ->addSelect(DB::raw('SUM(p_offense_q2.points) as total_team_points_q2'))
+        ->leftJoin('possessions as p_offense_q3', function($join) {
+            $join->on('p_offense_q3.id', '=', 'p.id');
+            $join->on('p_offense_q3.team_id', '=', 'players.team_id');
+            $join->where('p_offense_q3.period', '=', 3);
+            $join->whereNull('p_offense_q3.deleted_at');
+        })
+        ->addSelect(DB::raw('SUM(p_offense_q3.points) as total_team_points_q3'))
+        ->leftJoin('possessions as p_offense_q4', function($join) {
+            $join->on('p_offense_q4.id', '=', 'p.id');
+            $join->on('p_offense_q4.team_id', '=', 'players.team_id');
+            $join->where('p_offense_q4.period', '=', 4);
+            $join->whereNull('p_offense_q4.deleted_at');
+        })
+        ->addSelect(DB::raw('SUM(p_offense_q4.points) as total_team_points_q4'))
+        // Offensive overtime
+        ->leftJoin('possessions as p_offense_ot', function($join) {
+            $join->on('p_offense_ot.id', '=', 'p.id');
+            $join->on('p_offense_ot.team_id', '=', 'players.team_id');
+            $join->where('p_offense_ot.period', '>', 4);
+            $join->whereNull('p_offense_ot.deleted_at');
+        })
+        ->addSelect(DB::raw('SUM(p_offense_ot.points) as total_team_points_ot'))
+        // Defensive possessions by quarter
+        ->leftJoin('possessions as p_defense_q1', function($join) {
+            $join->on('p_defense_q1.id', '=', 'p.id');
+            $join->on('p_defense_q1.team_id', '!=', 'players.team_id');
+            $join->where('p_defense_q1.period', '=', 1);
+            $join->whereNull('p_defense_q1.deleted_at');
+        })
+        ->addSelect(DB::raw('SUM(p_defense_q1.points) as total_team_points_against_q1'))
+        ->leftJoin('possessions as p_defense_q2', function($join) {
+            $join->on('p_defense_q2.id', '=', 'p.id');
+            $join->on('p_defense_q2.team_id', '!=', 'players.team_id');
+            $join->where('p_defense_q2.period', '=', 2);
+            $join->whereNull('p_defense_q2.deleted_at');
+        })
+        ->addSelect(DB::raw('SUM(p_defense_q2.points) as total_team_points_against_q2'))
+        ->leftJoin('possessions as p_defense_q3', function($join) {
+            $join->on('p_defense_q3.id', '=', 'p.id');
+            $join->on('p_defense_q3.team_id', '!=', 'players.team_id');
+            $join->where('p_defense_q3.period', '=', 3);
+            $join->whereNull('p_defense_q3.deleted_at');
+        })
+        ->addSelect(DB::raw('SUM(p_defense_q3.points) as total_team_points_against_q3'))
+        ->leftJoin('possessions as p_defense_q4', function($join) {
+            $join->on('p_defense_q4.id', '=', 'p.id');
+            $join->on('p_defense_q4.team_id', '!=', 'players.team_id');
+            $join->where('p_defense_q4.period', '=', 4);
+            $join->whereNull('p_defense_q4.deleted_at');
+        })
+        ->addSelect(DB::raw('SUM(p_defense_q4.points) as total_team_points_against_q4'))
+        // Defensive overtime
+        ->leftJoin('possessions as p_defense_ot', function($join) {
+            $join->on('p_defense_ot.id', '=', 'p.id');
+            $join->on('p_defense_ot.team_id', '!=', 'players.team_id');
+            $join->where('p_defense_ot.period', '>', 4);
+            $join->whereNull('p_defense_ot.deleted_at');
+        })
+        ->addSelect(DB::raw('SUM(p_defense_ot.points) as total_team_points_against_ot'))
+        ->addSelect(DB::raw('SUM(p_offense_q1.points) + SUM(p_offense_q2.points) + SUM(p_offense_q3.points) + SUM(p_offense_q4.points) + SUM(p_offense_ot.points) as total_team_points'))
+        ->addSelect(DB::raw('SUM(p_defense_q1.points) + SUM(p_defense_q2.points) + SUM(p_defense_q3.points) + SUM(p_defense_q4.points) + SUM(p_defense_ot.points) as total_team_points_against'));
+    }
 
     /**
      * Scopes a query to aggregate data for scoring stats
