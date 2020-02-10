@@ -1,6 +1,6 @@
-# NBA Analysis
+# NBA Stats API Laravel
 
-Web application built to analyze NBA stats built with [Laravel](https://laravel.com/docs).
+API built to analyze NBA player stats built with [Laravel](https://laravel.com/docs).
 
 ## Seeding
 
@@ -14,7 +14,7 @@ After the above steps are taken, seed your database with:
 
 ## API Documentation
 
-The following endpoints can be accessed using a `GET` request 
+The following endpoints can be accessed using a `GET` request
 
 ### Get Conferences
 
