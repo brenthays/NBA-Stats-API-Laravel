@@ -11,3 +11,83 @@ Seeding play-by-play data (possessions) is done using the exports offered by [Bi
 After the above steps are taken, seed your database with:
 
 `php artisan migrate:refresh --seed`
+
+## API Documentation
+
+### Get Conferences
+
+Method: GET
+Endpoint: /api/conference
+
+| Parameter     | Description   |
+| ------------- | ------------- |
+| id            | Filters results by id, comma separated (e,g: `1,2`)                           |
+| orderBy       | Orders results by given attribute and direction (e,g. `id,asc`, `id,desc`)    |
+| not           | Excludes results by id, comma separated                                       |
+
+### Get Divisions
+
+Method: GET
+Endpoint: /api/division
+
+| Parameter     | Description   |
+| ------------- | ------------- |
+| id            | Filters results by id, comma separated (e,g: `1,2`)                           |
+| orderBy       | Orders results by given attribute and direction (e,g. `id,asc`, `id,desc`)    |
+| not           | Excludes results by id, comma separated                                       |
+| conference_id | Filters results by conference, comma separated                                |
+
+### Get Games
+
+Method: GET
+Endpoint: /api/game
+
+| Parameter     | Description   |
+| ------------- | ------------- |
+| id            | Filters results by id, comma separated (e,g: `1,2`)                           |
+| orderBy       | Orders results by given attribute and direction (e,g. `id,asc`, `id,desc`)    |
+| not           | Excludes results by id, comma separated                                       |
+| season_id     | Filters results by season, comma separated                                    |
+| team_id       | Filters results by team, comma separated                                      |
+| date          | Filters results by date                                                       |
+
+### Get Players
+
+Method: GET
+Endpoint: /api/player
+
+| Parameter     | Description   |
+| ------------- | ------------- |
+| id            | Filters results by id, comma separated (e,g: `1,2`)                           |
+| orderBy       | Orders results by given attribute and direction (e,g. `id,asc`, `id,desc`)    |
+| not           | Excludes results by id, comma separated                                       |
+| team_id       | Filters results by team, comma separated                                      |
+| name          | Filters results by name                                                       |
+| with_stats    | If set to 1, results will includ player stats for specified game/season       |
+| game_id       | `game_id` or `season_id` parameters required with `with_stats` parameter      |
+| season_id     | `game_id` or `season_id` parameters required with `with_stats` parameter      |
+
+### Get Seasons
+
+Method: GET
+Endpoint: /api/season
+
+| Parameter     | Description   |
+| ------------- | ------------- |
+| id            | Filters results by id, comma separated (e,g: `1,2`)                           |
+| orderBy       | Orders results by given attribute and direction (e,g. `id,asc`, `id,desc`)    |
+| not           | Excludes results by id, comma separated                                       |
+
+### Get Teams
+
+Method: GET
+Endpoint: /api/team
+
+| Parameter     | Description   |
+| ------------- | ------------- |
+| id            | Filters results by id, comma separated (e,g: `1,2`)                           |
+| orderBy       | Orders results by given attribute and direction (e,g. `id,asc`, `id,desc`)    |
+| not           | Excludes results by id, comma separated                                       |
+| city          | Filters results by city                                                       |
+| division_id   | Filters results by division                                                   |
+| short_name    | Filters results by short name (e,g. `HOU`)                                    |
