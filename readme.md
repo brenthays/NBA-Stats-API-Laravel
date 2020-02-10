@@ -14,10 +14,11 @@ After the above steps are taken, seed your database with:
 
 ## API Documentation
 
+The following endpoints can be accessed using a `GET` request 
+
 ### Get Conferences
 
-Method: GET
-Endpoint: /api/conference
+/api/conference
 
 | Parameter     | Description   |
 | ------------- | ------------- |
@@ -27,8 +28,7 @@ Endpoint: /api/conference
 
 ### Get Divisions
 
-Method: GET
-Endpoint: /api/division
+/api/division
 
 | Parameter     | Description   |
 | ------------- | ------------- |
@@ -39,8 +39,7 @@ Endpoint: /api/division
 
 ### Get Games
 
-Method: GET
-Endpoint: /api/game
+/api/game
 
 | Parameter     | Description   |
 | ------------- | ------------- |
@@ -53,8 +52,7 @@ Endpoint: /api/game
 
 ### Get Players
 
-Method: GET
-Endpoint: /api/player
+/api/player
 
 | Parameter     | Description   |
 | ------------- | ------------- |
@@ -69,8 +67,7 @@ Endpoint: /api/player
 
 ### Get Seasons
 
-Method: GET
-Endpoint: /api/season
+/api/season
 
 | Parameter     | Description   |
 | ------------- | ------------- |
@@ -80,8 +77,7 @@ Endpoint: /api/season
 
 ### Get Teams
 
-Method: GET
-Endpoint: /api/team
+/api/team
 
 | Parameter     | Description   |
 | ------------- | ------------- |
