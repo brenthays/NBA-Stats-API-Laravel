@@ -12,6 +12,7 @@ class PlayerController extends Controller
         'orderBy' => 'ofOrderBy',
         'not' => 'ofNot',
         'team_id' => 'ofTeam',
+        'name' => 'ofName',
     ];
 
     /**
