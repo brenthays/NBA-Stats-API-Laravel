@@ -36,6 +36,7 @@ class PlayerController extends Controller
                 ->statsBase($request->only(['game_id', 'season_id']))
                 ->statsMinutes()
                 ->statsScoring()
+                ->statsShooting()
                 ->statsAssists()
                 ->statsRebounding()
                 ->statsOffensiveVsDefensive();

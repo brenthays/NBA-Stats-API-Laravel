@@ -325,6 +325,86 @@ class Player extends BaseModel
     }
 
     /**
+     * Scopes a query to aggregate data for scoring stats
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder $query
+     * @param  mixed $args
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeStatsShooting($query)
+    {
+        // Events where the player made shot
+        $query = $query->leftJoin('possessions as p_made_shots', function($join) {
+            $join->on('p_made_shots.id', '=', 'p.id');
+            $join->on('p_made_shots.player_id', '=', 'players.id');
+            $join->where('p_made_shots.event_type', '=', 'shot');
+            $join->where('p_made_shots.result', '=', 'made');
+            $join->whereNull('p_made_shots.deleted_at');
+        })->addSelect(DB::raw('COUNT(DISTINCT p_made_shots.id) as total_player_made_shots'));
+
+        // Events where player missed shot
+        $query = $query->leftJoin('possessions as p_missed_shots', function($join) {
+            $join->on('p_missed_shots.id', '=', 'p.id');
+            $join->on('p_missed_shots.player_id', '=', 'players.id');
+            $join->where('p_missed_shots.event_type', '=', 'miss');
+            $join->where('p_missed_shots.result', '=', 'missed');
+            $join->whereNull('p_missed_shots.deleted_at');
+        })->addSelect(DB::raw('COUNT(DISTINCT p_missed_shots.id) as total_player_missed_shots'));
+
+        // Made shots by quarter
+        $query = $query
+        ->leftJoin('possessions as p_made_shots_q1', function($join) {
+            $join->on('p_made_shots_q1.id', '=', 'p_made_shots.id');
+            $join->where('p_made_shots_q1.period', '=', 1);
+        })->addSelect(DB::raw('SUM(p_made_shots_q1.points) as total_player_made_shots_q1'))
+        ->leftJoin('possessions as p_made_shots_q2', function($join) {
+            $join->on('p_made_shots_q2.id', '=', 'p_made_shots.id');
+            $join->where('p_made_shots_q2.period', '=', 3);
+        })->addSelect(DB::raw('SUM(p_made_shots_q2.points) as total_player_made_shots_q2'))
+        ->leftJoin('possessions as p_made_shots_q3', function($join) {
+            $join->on('p_made_shots_q3.id', '=', 'p_made_shots.id');
+            $join->where('p_made_shots_q3.period', '=', 3);
+        })->addSelect(DB::raw('SUM(p_made_shots_q3.points) as total_player_made_shots_q3'))
+        ->leftJoin('possessions as p_made_shots_q4', function($join) {
+            $join->on('p_made_shots_q4.id', '=', 'p_made_shots.id');
+            $join->where('p_made_shots_q4.period', '=', 4);
+        })->addSelect(DB::raw('SUM(p_made_shots_q4.points) as total_player_made_shots_q4'));
+
+        // Made shots in overtime
+        $query = $query->leftJoin('possessions as p_made_shots_ot', function($join) {
+            $join->on('p_made_shots_ot.id', '=', 'p_points.id');
+            $join->where('p_made_shots_ot.period', '>', 4);
+        })->addSelect(DB::raw('SUM(p_made_shots_ot.points) as total_player_made_shots_ot'));
+
+        // Missed shots by quarter
+        $query = $query
+        ->leftJoin('possessions as p_missed_shots_q1', function($join) {
+            $join->on('p_missed_shots_q1.id', '=', 'p_missed_shots.id');
+            $join->where('p_missed_shots_q1.period', '=', 1);
+        })->addSelect(DB::raw('SUM(p_missed_shots_q1.points) as total_player_missed_shots_q1'))
+        ->leftJoin('possessions as p_missed_shots_q2', function($join) {
+            $join->on('p_missed_shots_q2.id', '=', 'p_missed_shots.id');
+            $join->where('p_missed_shots_q2.period', '=', 3);
+        })->addSelect(DB::raw('SUM(p_missed_shots_q2.points) as total_player_missed_shots_q2'))
+        ->leftJoin('possessions as p_missed_shots_q3', function($join) {
+            $join->on('p_missed_shots_q3.id', '=', 'p_missed_shots.id');
+            $join->where('p_missed_shots_q3.period', '=', 3);
+        })->addSelect(DB::raw('SUM(p_missed_shots_q3.points) as total_player_missed_shots_q3'))
+        ->leftJoin('possessions as p_missed_shots_q4', function($join) {
+            $join->on('p_missed_shots_q4.id', '=', 'p_missed_shots.id');
+            $join->where('p_missed_shots_q4.period', '=', 4);
+        })->addSelect(DB::raw('SUM(p_missed_shots_q4.points) as total_player_missed_shots_q4'));
+
+        // Missed shots in overtime
+        $query = $query->leftJoin('possessions as p_missed_shots_ot', function($join) {
+            $join->on('p_missed_shots_ot.id', '=', 'p_points.id');
+            $join->where('p_missed_shots_ot.period', '>', 4);
+        })->addSelect(DB::raw('SUM(p_missed_shots_ot.points) as total_player_missed_shots_ot'));
+
+        return $query;
+    }
+
+    /**
      * Scopes a query to aggregate data for rebounding stats
      *
      * @param  \Illuminate\Database\Eloquent\Builder $query

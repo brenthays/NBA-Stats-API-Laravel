@@ -116,14 +116,6 @@ class PossessionPlayerSeeder extends Seeder
                     if(!empty($record[$key])) {
                         $thisPlayerId = $this->getPlayerId(utf8_encode($record[$key]));
                         $possessionArgs[$value] = $thisPlayerId ? $thisPlayerId : null;
-
-                        // Update the latest team for the player
-                        if($teamId && $possessionArgs[$value]) {
-                            DB::update('update players set team_id=? where id=?', [
-                                $teamId,
-                                $possessionArgs[$value]
-                            ]);
-                        }
                     }
                 }
 
@@ -138,9 +130,13 @@ class PossessionPlayerSeeder extends Seeder
                         'player_id' => $thisPlayerId,
                     ];
                     DB::table('player_possession')->insert($ppArgs);
+                    DB::update('update players set team_id=? where id=?', [
+                        $awayTeamId,
+                        $thisPlayerId,
+                    ]);
                 }
 
-                // Visiting team players on court
+                // Home team players on court
                 for($i=1; $i<=5; $i++) {
                     $thisPlayerId = $this->getPlayerId(utf8_encode($record['h'.$i]));
                     $ppArgs = [
@@ -149,6 +145,10 @@ class PossessionPlayerSeeder extends Seeder
                         'player_id' => $thisPlayerId,
                     ];
                     DB::table('player_possession')->insert($ppArgs);
+                    DB::update('update players set team_id=? where id=?', [
+                        $homeTeamId,
+                        $thisPlayerId,
+                    ]);
                 }
 
                 $i++;
