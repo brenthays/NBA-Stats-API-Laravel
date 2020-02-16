@@ -430,7 +430,7 @@ class Player extends BaseModel
         ->leftJoin('possessions as p_reb_q2', function($join) {
             $join->on('p_reb_q2.id', '=', 'p_reb.id');
             $join->where('p_reb_q2.period', '=', 2);
-        })->addSelect(DB::raw('COUNT(DISTINCT p_points_q2.id) as total_player_rebounds_q2'))
+        })->addSelect(DB::raw('COUNT(DISTINCT p_reb_q2.id) as total_player_rebounds_q2'))
         ->leftJoin('possessions as p_reb_q3', function($join) {
             $join->on('p_reb_q3.id', '=', 'p_reb.id');
             $join->where('p_reb_q3.period', '=', 3);
