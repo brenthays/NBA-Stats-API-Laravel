@@ -405,6 +405,86 @@ class Player extends BaseModel
     }
 
     /**
+     * Scopes a query to aggregate data for free throw stats
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder $query
+     * @param  mixed $args
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeStatsFreeThrows($query)
+    {
+        // Events where the player made ft
+        $query = $query->leftJoin('possessions as p_made_free_throws', function($join) {
+            $join->on('p_made_free_throws.id', '=', 'p.id');
+            $join->on('p_made_free_throws.player_id', '=', 'players.id');
+            $join->where('p_made_free_throws.event_type', '=', 'free throw');
+            $join->where('p_made_free_throws.result', '=', 'made');
+            $join->whereNull('p_made_free_throws.deleted_at');
+        })->addSelect(DB::raw('COUNT(DISTINCT p_made_free_throws.id) as total_player_made_free_throws'));
+
+        // Events where player missed ft
+        $query = $query->leftJoin('possessions as p_missed_free_throws', function($join) {
+            $join->on('p_missed_free_throws.id', '=', 'p.id');
+            $join->on('p_missed_free_throws.player_id', '=', 'players.id');
+            $join->where('p_missed_free_throws.event_type', '=', 'free throw');
+            $join->where('p_missed_free_throws.result', '=', 'missed');
+            $join->whereNull('p_missed_free_throws.deleted_at');
+        })->addSelect(DB::raw('COUNT(DISTINCT p_missed_free_throws.id) as total_player_missed_free_throws'));
+
+        // Made ft by quarter
+        $query = $query
+        ->leftJoin('possessions as p_made_free_throws_q1', function($join) {
+            $join->on('p_made_free_throws_q1.id', '=', 'p_made_free_throws.id');
+            $join->where('p_made_free_throws_q1.period', '=', 1);
+        })->addSelect(DB::raw('COUNT(DISTINCT p_made_free_throws_q1.id) as total_player_made_free_throws_q1'))
+        ->leftJoin('possessions as p_made_free_throws_q2', function($join) {
+            $join->on('p_made_free_throws_q2.id', '=', 'p_made_free_throws.id');
+            $join->where('p_made_free_throws_q2.period', '=', 3);
+        })->addSelect(DB::raw('COUNT(DISTINCT p_made_free_throws_q2.id) as total_player_made_free_throws_q2'))
+        ->leftJoin('possessions as p_made_free_throws_q3', function($join) {
+            $join->on('p_made_free_throws_q3.id', '=', 'p_made_free_throws.id');
+            $join->where('p_made_free_throws_q3.period', '=', 3);
+        })->addSelect(DB::raw('COUNT(DISTINCT p_made_free_throws_q3.id) as total_player_made_free_throws_q3'))
+        ->leftJoin('possessions as p_made_free_throws_q4', function($join) {
+            $join->on('p_made_free_throws_q4.id', '=', 'p_made_free_throws.id');
+            $join->where('p_made_free_throws_q4.period', '=', 4);
+        })->addSelect(DB::raw('COUNT(DISTINCT p_made_free_throws_q4.id) as total_player_made_free_throws_q4'));
+
+        // Made shots in overtime
+        $query = $query->leftJoin('possessions as p_made_free_throws_ot', function($join) {
+            $join->on('p_made_free_throws_ot.id', '=', 'p_made_free_throws.id');
+            $join->where('p_made_free_throws_ot.period', '>', 4);
+        })->addSelect(DB::raw('COUNT(DISTINCT p_made_free_throws_ot.id) as total_player_made_free_throws_ot'));
+
+        // Missed ft by quarter
+        $query = $query
+        ->leftJoin('possessions as p_missed_free_throws_q1', function($join) {
+            $join->on('p_missed_free_throws_q1.id', '=', 'p_missed_free_throws.id');
+            $join->where('p_missed_free_throws_q1.period', '=', 1);
+        })->addSelect(DB::raw('COUNT(DISTINCT p_missed_free_throws_q1.id) as total_player_missed_free_throws_q1'))
+        ->leftJoin('possessions as p_missed_free_throws_q2', function($join) {
+            $join->on('p_missed_free_throws_q2.id', '=', 'p_missed_free_throws.id');
+            $join->where('p_missed_free_throws_q2.period', '=', 2);
+        })->addSelect(DB::raw('COUNT(DISTINCT p_missed_free_throws_q2.id) as total_player_missed_free_throws_q2'))
+        ->leftJoin('possessions as p_missed_free_throws_q3', function($join) {
+            $join->on('p_missed_free_throws_q3.id', '=', 'p_missed_free_throws.id');
+            $join->where('p_missed_free_throws_q3.period', '=', 3);
+        })->addSelect(DB::raw('COUNT(DISTINCT p_missed_free_throws_q3.id) as total_player_missed_free_throws_q3'))
+        ->leftJoin('possessions as p_missed_free_throws_q4', function($join) {
+            $join->on('p_missed_free_throws_q4.id', '=', 'p_missed_free_throws.id');
+            $join->where('p_missed_free_throws_q4.period', '=', 4);
+        })->addSelect(DB::raw('COUNT(DISTINCT p_missed_free_throws_q4.id) as total_player_missed_free_throws_q4'));
+
+        // Missed shots in overtime
+        $query = $query->leftJoin('possessions as p_missed_free_throws_ot', function($join) {
+            $join->on('p_missed_free_throws_ot.id', '=', 'p_missed_free_throws.id');
+            $join->where('p_missed_free_throws_ot.period', '>', 4);
+        })->addSelect(DB::raw('COUNT(DISTINCT p_missed_free_throws_ot.id) as total_player_missed_free_throws_ot'));
+
+        return $query;
+    }
+
+    /**
      * Scopes a query to aggregate data for rebounding stats
      *
      * @param  \Illuminate\Database\Eloquent\Builder $query

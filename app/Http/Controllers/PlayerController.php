@@ -37,6 +37,7 @@ class PlayerController extends Controller
                 ->statsMinutes()
                 ->statsScoring()
                 ->statsShooting()
+                ->statsFreeThrows()
                 ->statsAssists()
                 ->statsRebounding()
                 ->statsOffensiveVsDefensive();
