@@ -30,8 +30,8 @@ class GameController extends Controller
             'team_id' => 'exists:teams,id',
         ]);
 
-        $cacheKey = 'allGames' . implode($request->all(), '&');
-        $games = Cache::rememberForever($cacheKey, function() use ($request) {
+        $cacheKey = $this->getCacheKey('allGames', $request);
+        $games = Cache::remember($cacheKey, now()->addMinutes(15), function() use ($request) {
             return $this->applyFilters($request, new Game)->get();
         });
 

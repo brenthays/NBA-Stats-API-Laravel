@@ -27,8 +27,8 @@ class DivisionController extends Controller
             'conference_id' => 'exists:conferences,id',
         ]);
 
-        $cacheKey = 'allDivisions' . implode($request->all(), '&');
-        $divisions = Cache::rememberForever($cacheKey, function() use ($request) {
+        $cacheKey = $this->getCacheKey('allDivisions', $request);
+        $divisions = Cache::remember($cacheKey, now()->addMinutes(15), function() use ($request) {
             return $this->applyFilters($request, new Division)->get();
         });
 

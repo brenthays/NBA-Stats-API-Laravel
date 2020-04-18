@@ -30,8 +30,8 @@ class TeamController extends Controller
             'short_name' => 'exists:teams,short_name',
         ]);
 
-        $cacheKey = 'allTeams' . implode($request->all(), '&');
-        $teams = Cache::rememberForever($cacheKey, function() use ($request) {
+        $cacheKey = $this->getCacheKey('allTeams', $request);
+        $teams = Cache::remember($cacheKey, now()->addMinutes(15), function() use ($request) {
             return $this->applyFilters($request, new Team)->get();
         });
 

@@ -12,6 +12,13 @@ class Controller extends BaseController
 {
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
 
+    /**
+     * Applies appropriate scope methods to a query based on request parameters
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @param  \Illuminate\Database\Eloquent\Builder $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
     public function applyFilters(Request $request, $query)
     {
        if(!empty($this->filters))
@@ -27,5 +34,19 @@ class Controller extends BaseController
            }
        }
        return $query;
+    }
+
+    /**
+     * Creates a cache key based on the request parameters
+     *
+     * @param  string $prefix
+     * @param  \Illuminate\Http\Request $request
+     * @return string
+     */
+    public function getCacheKey($prefix, Request $request)
+    {
+        $input = $request->all();
+        ksort($input); // sort the array by key
+        return $prefix . json_encode($input);
     }
 }
