@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Division;
+use Illuminate\Support\Facades\Cache;
 
 class DivisionController extends Controller
 {
