@@ -31,7 +31,7 @@ class GameController extends Controller
         ]);
 
         $cacheKey = 'allGames' . implode($request->all(), '&');
-        $games = Cache::remember($cacheKey, 900, function() use ($request) {
+        $games = Cache::rememberForever($cacheKey, function() use ($request) {
             return $this->applyFilters($request, new Game)->get();
         });
 

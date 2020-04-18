@@ -26,7 +26,7 @@ class SeasonController extends Controller
         ]);
 
         $cacheKey = 'allSeasons' . implode($request->all(), '&');
-        $seasons = Cache::remember($cacheKey, 900, function() use ($request) {
+        $seasons = Cache::rememberForever($cacheKey, function() use ($request) {
             return $this->applyFilters($request, new Season)->get();
         });
 

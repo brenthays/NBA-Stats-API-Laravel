@@ -31,7 +31,7 @@ class PlayerController extends Controller
         ]);
 
         $cacheKey = 'allPlayers' . implode($request->all(), '&');
-        $players = Cache::remember($cacheKey, 900, function() use ($request) {
+        $players = Cache::rememberForever($cacheKey, function() use ($request) {
             $players = $this->applyFilters($request, new Player);
 
             if($request->has('with_stats') && $request->with_stats && ($request->has('season_id') || $request->has('game_id'))) {

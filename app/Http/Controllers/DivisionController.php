@@ -28,7 +28,7 @@ class DivisionController extends Controller
         ]);
 
         $cacheKey = 'allDivisions' . implode($request->all(), '&');
-        $divisions = Cache::remember($cacheKey, 900, function() use ($request) {
+        $divisions = Cache::rememberForever($cacheKey, function() use ($request) {
             return $this->applyFilters($request, new Division)->get();
         });
 

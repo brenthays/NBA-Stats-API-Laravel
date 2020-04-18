@@ -26,7 +26,7 @@ class ConferenceController extends Controller
         ]);
 
         $cacheKey = 'allConferences' . implode($request->all(), '&');
-        $conferences = Cache::remember($cacheKey, 900, function() use ($request) {
+        $conferences = Cache::rememberForever($cacheKey, function() use ($request) {
             return $this->applyFilters($request, new Conference)->get();
         });
 

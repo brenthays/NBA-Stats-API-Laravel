@@ -12,12 +12,12 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
-        Cache::clear();
-        
         $this->call([
             ConferencesTableSeeder::class,
             TeamsTableSeeder::class,
             PossessionPlayerSeeder::class,
         ]);
+
+        Cache::clear();
     }
 }

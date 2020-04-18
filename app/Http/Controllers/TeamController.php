@@ -31,7 +31,7 @@ class TeamController extends Controller
         ]);
 
         $cacheKey = 'allTeams' . implode($request->all(), '&');
-        $teams = Cache::remember($cacheKey, 900, function() use ($request) {
+        $teams = Cache::rememberForever($cacheKey, function() use ($request) {
             return $this->applyFilters($request, new Team)->get();
         });
 
