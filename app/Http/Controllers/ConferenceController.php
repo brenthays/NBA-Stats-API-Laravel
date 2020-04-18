@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Conference;
+use Illuminate\Support\Facades\Cache;
 
 class ConferenceController extends Controller
 {
@@ -24,7 +25,11 @@ class ConferenceController extends Controller
             'id' => 'exists:conferences,id',
         ]);
 
-        $conferences = $this->applyFilters($request, new Conference);
-        return $conferences->get();
+        $cacheKey = 'allConferences' . implode($request->all(), '&');
+        $conferences = Cache::remember($cacheKey, 900, function() use ($request) {
+            return $this->applyFilters($request, new Conference)->get();
+        });
+
+        return $conferences;
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Team;
+use Illuminate\Support\Facades\Cache;
 
 class TeamController extends Controller
 {
@@ -29,7 +30,11 @@ class TeamController extends Controller
             'short_name' => 'exists:teams,short_name',
         ]);
 
-        $teams = $this->applyFilters($request, new Team);
-        return $teams->get();
+        $cacheKey = 'allTeams' . implode($request->all(), '&');
+        $teams = Cache::remember($cacheKey, 900, function() use ($request) {
+            return $this->applyFilters($request, new Team)->get();
+        });
+
+        return $teams;
     }
 }

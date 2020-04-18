@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Season;
+use Illuminate\Support\Facades\Cache;
 
 class SeasonController extends Controller
 {
@@ -24,7 +25,11 @@ class SeasonController extends Controller
             'id' => 'exists:seasons,id',
         ]);
 
-        $seasons = $this->applyFilters($request, new Season);
-        return $seasons->get();
+        $cacheKey = 'allSeasons' . implode($request->all(), '&');
+        $seasons = Cache::remember($cacheKey, 900, function() use ($request) {
+            return $this->applyFilters($request, new Season)->get();
+        });
+
+        return $seasons;
     }
 }

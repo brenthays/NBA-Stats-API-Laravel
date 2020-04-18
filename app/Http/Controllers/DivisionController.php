@@ -26,7 +26,11 @@ class DivisionController extends Controller
             'conference_id' => 'exists:conferences,id',
         ]);
 
-        $divisions = $this->applyFilters($request, new Division);
-        return $divisions->get();
+        $cacheKey = 'allDivisions' . implode($request->all(), '&');
+        $divisions = Cache::remember($cacheKey, 900, function() use ($request) {
+            return $this->applyFilters($request, new Division)->get();
+        });
+
+        return $divisions;
     }
 }

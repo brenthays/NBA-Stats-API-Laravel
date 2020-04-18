@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Player;
+use Illuminate\Support\Facades\Cache;
 
 class PlayerController extends Controller
 {
@@ -29,20 +30,25 @@ class PlayerController extends Controller
             'team_id' => 'exists:teams,id',
         ]);
 
-        $players = $this->applyFilters($request, new Player);
+        $cacheKey = 'allPlayers' . implode($request->all(), '&');
+        $players = Cache::remember($cacheKey, 900, function() use ($request) {
+            $players = $this->applyFilters($request, new Player);
 
-        if($request->has('with_stats') && $request->with_stats && ($request->has('season_id') || $request->has('game_id'))) {
-            $players = $players
-                ->statsBase($request->only(['game_id', 'season_id']))
-                ->statsMinutes()
-                ->statsScoring()
-                ->statsShooting()
-                ->statsFreeThrows()
-                ->statsAssists()
-                ->statsRebounding()
-                ->statsOffensiveVsDefensive();
-        }
+            if($request->has('with_stats') && $request->with_stats && ($request->has('season_id') || $request->has('game_id'))) {
+                $players = $players
+                    ->statsBase($request->only(['game_id', 'season_id']))
+                    ->statsMinutes()
+                    ->statsScoring()
+                    ->statsShooting()
+                    ->statsFreeThrows()
+                    ->statsAssists()
+                    ->statsRebounding()
+                    ->statsOffensiveVsDefensive();
+            }
 
-        return $players->get();
+            return $players->get();
+        });
+
+        return $players;
     }
 }

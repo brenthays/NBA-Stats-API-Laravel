@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Game;
+use Illuminate\Support\Facades\Cache;
 
 class GameController extends Controller
 {
@@ -29,7 +30,11 @@ class GameController extends Controller
             'team_id' => 'exists:teams,id',
         ]);
 
-        $games = $this->applyFilters($request, new Game);
-        return $games->get();
+        $cacheKey = 'allGames' . implode($request->all(), '&');
+        $games = Cache::remember($cacheKey, 900, function() use ($request) {
+            return $this->applyFilters($request, new Game)->get();
+        });
+
+        return $games;
     }
 }
